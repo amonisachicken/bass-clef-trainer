@@ -95,23 +95,6 @@ function pickMidi(settings) {
   }
 }
 
-function distractors(settings, midi) {
-  const correct = nameOf(midi, true);
-  const pool = [];
-  for (let d = -12; d <= 12; d++) {
-    const m = midi + d;
-    if (m < 21 || m > 108) continue;
-    if (!settings.allowAccidentals && !isNatural(m)) continue;
-    const n = nameOf(m, true);
-    if (n !== correct && !pool.includes(n)) pool.push(n);
-  }
-  const chosen = [];
-  while (chosen.length < 3 && pool.length) {
-    chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  }
-  return [correct, ...chosen].sort(() => Math.random() - 0.5);
-}
-
 function generateQuestion(settings, mode) {
   const midi = pickMidi(settings);
   const question = {
@@ -119,24 +102,13 @@ function generateQuestion(settings, mode) {
     mode,
     midi,
     name: nameOf(midi, true),
-    options: mode === 'name' ? distractors(settings, midi) : [],
   };
   current = question;
   return question;
 }
 
 function checkAnswer(question, input) {
-  if ('midi' in input) return input.midi === question.midi;
-  if ('name' in input) {
-    const n = String(input.name)
-      .trim()
-      .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
-      .replace(/♯/g, '#')
-      .replace(/♭/g, 'b')
-      .toLowerCase();
-    return n === question.name.toLowerCase();
-  }
-  return false;
+  return input.midi === question.midi;
 }
 
 /** 与 Rust 命令同名的降级实现。 */
@@ -149,7 +121,7 @@ export async function invoke(cmd, args = {}) {
       const p = load();
       p.settings = { ...DEFAULT_SETTINGS, ...args.settings };
       save(p);
-      current = null;
+      // 与 Rust 侧一致：不清空当前题目，避免与 generate_question 竞态
       return null;
     }
     case 'generate_question': {

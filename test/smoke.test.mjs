@@ -1,6 +1,6 @@
-// 前端主逻辑冒烟测试（jsdom）：验证 init 完整执行、设置加载/持久化、答错后下一题可用。
-// 历史教训：main.js 曾引用未定义函数导致 bindControls 抛错、init 中止，
-// 表现为设置不显示、下一题按钮失效——本测试用于捕获这类问题。
+// 前端主逻辑冒烟测试（jsdom）：验证 init 完整执行、设置加载/持久化、两种模式作答正常。
+// 历史教训：main.js 曾引用未定义函数导致 bindControls 抛错、init 中止；
+// save_settings 曾清空后端当前题导致切模式后点击无反应——本测试用于捕获这类问题。
 // 运行: npm run test:js（node --test test/*.test.mjs）
 
 import test from 'node:test';
@@ -87,4 +87,28 @@ test('前端主逻辑：init 完整执行，设置加载/联动/答错下一题�
 
   // 5. 无未处理错误（捕获 init 中止 / 事件处理抛错类问题）
   assert.deepEqual(errors, [], '不应有任何运行时错误');
+});
+
+test('看键认谱模式：切换后点击谱表应正常作答', async () => {
+  // 模式按钮应只剩两个（音名问答已移除）
+  const modeBtns = [...window.document.querySelectorAll('.mode-btn')];
+  assert.equal(modeBtns.length, 2, '应只剩看谱弹键/看键认谱两个模式');
+
+  // 切换到看键认谱
+  const p2s = modeBtns.find((b) => b.dataset.mode === 'pianoToStaff');
+  p2s.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await wait(400);
+
+  // 点击谱表上的音位（jsdom 中 staff 布局：w=640, gap=17, line1Y=188, noteX≈269；
+  // 注意第一个测试把最低音改成了 50，这里点范围内的 pos6=F3）
+  const staff = $('#staffCanvas');
+  staff.dispatchEvent(new window.MouseEvent('click', {
+    clientX: 269, clientY: 188 - 6 * 17, bubbles: true, // pos6 音位
+  }));
+  await wait(400);
+
+  const fb = $('#feedback');
+  assert.ok(!fb.hidden, '点击谱表后应出现作答反馈');
+  assert.ok(/正确答案/.test(fb.textContent), `反馈应显示判定结果: ${fb.textContent}`);
+  assert.deepEqual(errors, [], '看键认谱流程不应有任何运行时错误');
 });

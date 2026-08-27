@@ -84,23 +84,6 @@ body {
 .hint { text-align: center; font-size: 13px; color: var(--muted); padding: 6px 0 10px; min-height: 20px; }
 .staff-wrap .hint { padding-top: 2px; }
 
-.name-options { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; min-height: 40px; }
-.option-btn {
-  border: 1px solid var(--line);
-  background: var(--panel-2);
-  color: var(--text);
-  font-size: 16px;
-  font-weight: 600;
-  padding: 8px 22px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.option-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
-.option-btn.ok { background: var(--ok); border-color: var(--ok); color: #06281c; }
-.option-btn.bad { background: var(--bad); border-color: var(--bad); color: #2a0a0a; }
-.option-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
-
 .feedback {
   text-align: center;
   font-size: 17px;

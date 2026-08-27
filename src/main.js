@@ -40,6 +40,10 @@ async function init() {
   state.settings = profile.settings;
   state.stats = profile.stats;
   state.mode = profile.settings.mode || 'staffToPiano';
+  // 音名问答模式已移除：旧存档若保存了该模式，回退到看谱弹键
+  if (state.mode !== 'staffToPiano' && state.mode !== 'pianoToStaff') {
+    state.mode = 'staffToPiano';
+  }
   sanitizeRange(); // 防御：损坏/越界的音域回退到 F2–B3
 
   const badge = $('#envBadge');
@@ -201,7 +205,6 @@ function setMode(mode) {
     btn.classList.toggle('active', btn.dataset.mode === mode);
   }
   staff.setInteractive(mode === 'pianoToStaff');
-  $('#nameOptions').hidden = mode !== 'name';
   newQuestion();
 }
 
@@ -214,7 +217,6 @@ async function newQuestion() {
   state.lastPick = null;
   hideFeedback();
   $('#nextBtn').hidden = true;
-  $('#nameOptions').innerHTML = '';
 
   const q = await invoke('generate_question', { mode: state.mode });
   state.question = q;
@@ -228,11 +230,6 @@ async function newQuestion() {
     piano.highlight(q.midi);
     if (state.settings.sound) playNote(q.midi, 0.4);
     setHint('高亮的琴键是哪个音？点击上方谱表中它的位置');
-  } else {
-    staff.showQuestion(q.midi);
-    piano.clearFeedback();
-    renderOptions(q);
-    setHint('这个音符叫什么名字？选择正确的音名');
   }
 }
 
@@ -243,7 +240,17 @@ async function answer(input) {
   state.answered = true;
   const q = state.question; // 在 await 前捕获，避免期间换题导致显示错位
   ensureAudio();
-  const result = await invoke('submit_answer', { input });
+  let result;
+  try {
+    result = await invoke('submit_answer', { input });
+  } catch (e) {
+    // 兜底：提交失败时给用户可见提示，而不是静默无反应
+    console.error('提交答案失败:', e);
+    state.answered = false;
+    showFeedback('提交失败，请再试一次', 'bad');
+    $('#nextBtn').hidden = false;
+    return;
+  }
   state.stats = result.stats;
   updateStatsUI();
 
@@ -252,7 +259,6 @@ async function answer(input) {
     if (state.settings.sound) playCorrect();
     if (result.mode === 'staffToPiano') piano.showFeedback(q.midi);
     if (result.mode === 'pianoToStaff') staff.showAnswer(q.midi);
-    if (result.mode === 'name') markOptions(true, result.correctName);
     if (state.settings.autoNext) {
       state.timer = setTimeout(newQuestion, 750);
     } else {
@@ -263,34 +269,7 @@ async function answer(input) {
     if (state.settings.sound) playWrong();
     if (result.mode === 'staffToPiano') piano.showFeedback(result.correctMidi, state.lastPick);
     if (result.mode === 'pianoToStaff') staff.showAnswer(result.correctMidi, state.lastPick);
-    if (result.mode === 'name') markOptions(false, result.correctName);
     $('#nextBtn').hidden = false;
-  }
-}
-
-function renderOptions(q) {
-  const box = $('#nameOptions');
-  box.innerHTML = '';
-  for (const name of q.options) {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.textContent = name;
-    btn.addEventListener('click', () => {
-      btn.classList.add('picked');
-      answer({ name });
-    });
-    box.appendChild(btn);
-  }
-}
-
-function markOptions(correct, correctName) {
-  for (const b of document.querySelectorAll('#nameOptions .option-btn')) {
-    b.disabled = true;
-    if (b.textContent === correctName) {
-      b.classList.add('ok');
-    } else if (!correct && b.classList.contains('picked')) {
-      b.classList.add('bad');
-    }
   }
 }
 

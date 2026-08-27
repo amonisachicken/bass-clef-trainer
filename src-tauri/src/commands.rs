@@ -37,7 +37,10 @@ pub fn save_settings(
         .unwrap()
         .save(&profile)
         .map_err(|e| e.to_string())?;
-    *state.current_question.lock().unwrap() = None;
+    // 注意：不要在此清空 current_question——
+    // 前端"切换模式"等路径会同时发出 save_settings 与 generate_question，
+    // 若此处清空会与 generate_question 产生竞态，导致后续提交报"没有待回答的题目"。
+    // 前端每次设置变更后都会重新生成题目覆盖旧题，旧题短暂残留无碍。
     Ok(())
 }
 
