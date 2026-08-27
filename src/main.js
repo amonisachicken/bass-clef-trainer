@@ -8,11 +8,6 @@ import { nameOf } from './js/notes.js';
 
 const $ = (sel) => document.querySelector(sel);
 
-const PRESETS = {
-  basic: { min: 41, max: 59 },    // F2 – B3（谱表内常用音域）
-  advanced: { min: 36, max: 64 }, // C2 – E4
-};
-
 const NATURAL_PCS = [0, 2, 4, 5, 7, 9, 11];
 
 const state = {
@@ -45,13 +40,6 @@ async function init() {
   state.settings = profile.settings;
   state.stats = profile.stats;
   state.mode = profile.settings.mode || 'staffToPiano';
-
-  // 预设音域以 PRESETS 为准：老版本存档里的旧默认值（C2–C4）在此自动迁移到 F2–B3
-  const preset = PRESETS[state.settings.rangePreset];
-  if (preset) {
-    state.settings.minMidi = preset.min;
-    state.settings.maxMidi = preset.max;
-  }
 
   const badge = $('#envBadge');
   badge.hidden = false;
@@ -98,25 +86,26 @@ function bindControls() {
     invoke('save_settings', { settings: state.settings }); // 记住上次模式
   });
 
-  $('#rangePreset').addEventListener('change', (e) => {
-    const v = e.target.value;
-    $('#customRange').hidden = v !== 'custom';
-    if (v === 'custom') {
-      applyCustomFromSelects();
-    } else if (PRESETS[v]) {
-      state.settings.minMidi = PRESETS[v].min;
-      state.settings.maxMidi = PRESETS[v].max;
-    }
-    state.settings.rangePreset = v;
-    commitSettings();
-  });
-
   $('#minNote').addEventListener('change', () => {
-    applyCustomFromSelects();
+    // 最低音不能高于最高音：若越界则把最高音同步上来
+    const min = Number($('#minNote').value);
+    if (min > state.settings.maxMidi) {
+      state.settings.maxMidi = min;
+      $('#maxNote').value = String(min);
+    }
+    state.settings.minMidi = min;
+    syncRangeSelects();
     commitSettings();
   });
   $('#maxNote').addEventListener('change', () => {
-    applyCustomFromSelects();
+    // 最高音不能低于最低音：若越界则把最低音同步下去
+    const max = Number($('#maxNote').value);
+    if (max < state.settings.minMidi) {
+      state.settings.minMidi = max;
+      $('#minNote').value = String(max);
+    }
+    state.settings.maxMidi = max;
+    syncRangeSelects();
     commitSettings();
   });
 
@@ -143,16 +132,12 @@ function bindControls() {
   $('#nextBtn').addEventListener('click', nextQuestion);
 }
 
-function applyCustomFromSelects() {
-  let min = Number($('#minNote').value);
-  let max = Number($('#maxNote').value);
-  if (min > max) {
-    const t = min;
-    min = max;
-    max = t;
-  }
-  state.settings.minMidi = min;
-  state.settings.maxMidi = max;
+/** 联动禁用：最低音里高于最高音的音、最高音里低于最低音的音置灰不可选。 */
+function syncRangeSelects() {
+  const min = state.settings.minMidi;
+  const max = state.settings.maxMidi;
+  for (const opt of $('#minNote').options) opt.disabled = Number(opt.value) > max;
+  for (const opt of $('#maxNote').options) opt.disabled = Number(opt.value) < min;
 }
 
 async function commitSettings() {
@@ -163,10 +148,9 @@ async function commitSettings() {
 }
 
 function updateSettingsUI() {
-  $('#rangePreset').value = state.settings.rangePreset || 'basic';
-  $('#customRange').hidden = (state.settings.rangePreset || 'basic') !== 'custom';
   $('#minNote').value = String(state.settings.minMidi);
   $('#maxNote').value = String(state.settings.maxMidi);
+  syncRangeSelects();
   $('#optAccidentals').checked = state.settings.allowAccidentals;
   $('#optLabels').checked = state.settings.showKeyLabels;
   $('#optCheat').checked = state.settings.showCheatSheet;

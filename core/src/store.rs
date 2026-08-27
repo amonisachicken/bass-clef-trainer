@@ -15,8 +15,6 @@ pub struct Settings {
     pub min_midi: u8,
     /// 练习音域上限（MIDI）。
     pub max_midi: u8,
-    /// 音域预设：`basic` | `advanced` | `custom`。
-    pub range_preset: String,
     /// 是否包含升降号（黑键）。
     pub allow_accidentals: bool,
     /// 钢琴键上是否显示音名。
@@ -36,7 +34,6 @@ impl Default for Settings {
         Self {
             min_midi: 41, // F2
             max_midi: 59, // B3
-            range_preset: "basic".into(),
             allow_accidentals: false,
             show_key_labels: true,
             show_cheat_sheet: false,
