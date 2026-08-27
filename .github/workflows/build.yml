@@ -65,4 +65,7 @@ jobs:
           releaseBody: '自动构建的三平台安装包。'
           releaseDraft: true
           prerelease: false
+          # 前端是纯静态文件，无需构建步骤；显式置空以避免默认执行
+          # package.json 中的 build 脚本（tauri build 嵌套执行会导致打包参数丢失）
+          beforeBuildCommand: ''
           args: ${{ matrix.args }}
