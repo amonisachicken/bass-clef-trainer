@@ -40,6 +40,7 @@ async function init() {
   state.settings = profile.settings;
   state.stats = profile.stats;
   state.mode = profile.settings.mode || 'staffToPiano';
+  sanitizeRange(); // 防御：损坏/越界的音域回退到 F2–B3
 
   const badge = $('#envBadge');
   badge.hidden = false;
@@ -56,7 +57,7 @@ async function init() {
   document.addEventListener('keydown', (e) => {
     if ((e.key === ' ' || e.key === 'Enter') && state.answered) {
       e.preventDefault();
-      nextQuestion();
+      newQuestion();
     }
   });
   window.addEventListener('resize', () => {
@@ -129,7 +130,24 @@ function bindControls() {
     updateStatsUI();
   });
 
-  $('#nextBtn').addEventListener('click', nextQuestion);
+  $('#nextBtn').addEventListener('click', newQuestion);
+}
+
+/** 防御：存档损坏/越界时回退到默认音域 F2–B3，并保证 min ≤ max。 */
+function sanitizeRange() {
+  let min = Number(state.settings.minMidi);
+  let max = Number(state.settings.maxMidi);
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min < 21 || max > 108) {
+    min = 41;
+    max = 59;
+  }
+  if (min > max) {
+    const t = min;
+    min = max;
+    max = t;
+  }
+  state.settings.minMidi = min;
+  state.settings.maxMidi = max;
 }
 
 /** 联动禁用：最低音里高于最高音的音、最高音里低于最低音的音置灰不可选。 */

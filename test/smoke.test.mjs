@@ -1,0 +1,90 @@
+// 前端主逻辑冒烟测试（jsdom）：验证 init 完整执行、设置加载/持久化、答错后下一题可用。
+// 历史教训：main.js 曾引用未定义函数导致 bindControls 抛错、init 中止，
+// 表现为设置不显示、下一题按钮失效——本测试用于捕获这类问题。
+// 运行: npm run test:js（node --test test/*.test.mjs）
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { JSDOM } from 'jsdom';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const html = readFileSync(join(root, 'src', 'index.html'), 'utf8');
+const dom = new JSDOM(html, { url: 'http://localhost/' });
+const { window } = dom;
+
+// ---- canvas 桩：所有 ctx 方法可调用，属性可读写 ----
+window.HTMLCanvasElement.prototype.getContext = function () {
+  const canvas = this;
+  return new Proxy({}, {
+    get(t, k) {
+      if (k === 'canvas') return canvas;
+      if (k === 'measureText') return () => ({ width: 10 });
+      if (k === 'createLinearGradient' || k === 'createRadialGradient') return () => ({ addColorStop() {} });
+      return () => undefined;
+    },
+    set(t, k, v) { t[k] = v; return true; },
+  });
+};
+window.HTMLCanvasElement.prototype.getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 250 });
+
+// ---- 注入全局（不覆写 setTimeout，避免破坏 jsdom 内部定时器） ----
+for (const k of ['window', 'document', 'localStorage', 'location', 'HTMLElement', 'Event', 'CustomEvent', 'MouseEvent', 'KeyboardEvent']) {
+  try { globalThis[k] = window[k]; } catch { Object.defineProperty(globalThis, k, { value: window[k], configurable: true }); }
+}
+try { globalThis.navigator = window.navigator; } catch { Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true }); }
+globalThis.self = window;
+
+const errors = [];
+window.addEventListener('error', (e) => errors.push(e.message));
+window.addEventListener('unhandledrejection', (e) => errors.push(String(e.reason && e.reason.message || e.reason)));
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const $ = (sel) => window.document.querySelector(sel);
+
+test('前端主逻辑：init 完整执行，设置加载/联动/答错下一题正常', async () => {
+  // 动态加载主模块（demo 模式：无 window.__TAURI__）
+  await import('../src/main.js');
+  await wait(600);
+
+  // 1. init 完成后应显示默认 F2–B3（而非 C1–C1）
+  assert.equal($('#minNote').value, '41', '最低音默认应为 F2(41)');
+  assert.equal($('#maxNote').value, '59', '最高音默认应为 B3(59)');
+
+  // 2. 联动禁用：最高音栏低于 F2 的禁用、最低音栏高于 B3 的禁用
+  const maxDisabled = [...$('#maxNote').options].filter((o) => o.disabled).map((o) => +o.value);
+  assert.ok(maxDisabled.length > 0 && Math.max(...maxDisabled) < 41, '最高音栏应禁用低于 F2 的音');
+  const minDisabled = [...$('#minNote').options].filter((o) => o.disabled).map((o) => +o.value);
+  assert.ok(minDisabled.length > 0 && Math.min(...minDisabled) > 59, '最低音栏应禁用高于 B3 的音');
+
+  // 3. 修改最低音 → 界面与持久化同步
+  $('#minNote').value = '50';
+  $('#minNote').dispatchEvent(new window.Event('change', { bubbles: true }));
+  await wait(300);
+  const saved = JSON.parse(window.localStorage.getItem('bass-clef-profile-v1') || '{}');
+  assert.equal(saved.settings.minMidi, 50, '改动应持久化到 localStorage');
+  assert.equal($('#minNote').value, '50');
+
+  // 4. 答错 → 下一题按钮可用 → 点击出题
+  const piano = $('#pianoCanvas');
+  // 点击钢琴最左侧键（范围 F2–B3 内的键）
+  piano.dispatchEvent(new window.MouseEvent('click', { clientX: 5, clientY: 60, bubbles: true }));
+  await wait(500);
+  const fb = $('#feedback');
+  const nextBtn = $('#nextBtn');
+  if (!nextBtn.hidden) {
+    // 答错路径：点击下一题，处理函数必须真实可用（历史上曾因引用未定义函数而失效）
+    nextBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    await wait(400);
+    assert.ok(nextBtn.hidden, '点击后按钮应隐藏');
+    assert.ok(fb.hidden, '反馈应被清除');
+  } else {
+    // 答对路径：autoNext 应已进入下一题
+    assert.ok(fb.hidden || $('#streak').textContent === '1', '答对后应自动进入下一题');
+  }
+
+  // 5. 无未处理错误（捕获 init 中止 / 事件处理抛错类问题）
+  assert.deepEqual(errors, [], '不应有任何运行时错误');
+});

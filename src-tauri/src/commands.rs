@@ -24,6 +24,11 @@ pub fn save_settings(
     state: State<'_, AppState>,
     settings: Settings,
 ) -> Result<(), String> {
+    // 防御：保证 min ≤ max（前端已校验，这里兜底）
+    let mut settings = settings;
+    if settings.min_midi > settings.max_midi {
+        std::mem::swap(&mut settings.min_midi, &mut settings.max_midi);
+    }
     let mut profile = state.profile.lock().unwrap();
     profile.settings = settings;
     state
