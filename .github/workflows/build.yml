@@ -90,6 +90,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e
           VERSION=$(node -e "console.log(require('./package.json').version)")
           TAG="v$VERSION"
           FILES=$(find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) ! -name "*.sig" ! -name "*.zip")
@@ -97,9 +98,10 @@ jobs:
           # 生成变更日志：自上一个标签以来的全部提交
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
           if [ -n "$PREV_TAG" ]; then
-            LOG=$(git log --oneline --no-merges "$PREV_TAG"..HEAD | sed 's/^/- /')
-          else
-            LOG=$(git log --oneline --no-merges -15 HEAD | sed 's/^/- /')
+            LOG=$(git log --oneline --no-merges "$PREV_TAG"..HEAD 2>/dev/null | sed 's/^/- /')
+          fi
+          if [ -z "${LOG:-}" ]; then
+            LOG=$(git log --oneline --no-merges -15 HEAD 2>/dev/null | sed 's/^/- /')
           fi
           NOTES="## 📦 $TAG 更新内容
 
@@ -112,12 +114,15 @@ jobs:
           echo "==> 标签: $TAG"
           echo "==> 上传文件:"
           echo "$FILES"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --notes "$NOTES"
-            gh release upload "$TAG" $FILES --clobber
-          else
-            gh release create "$TAG" $FILES \
-              --title "低音谱号训练器 $TAG" \
-              --notes "$NOTES"
+
+          # 并发安全：先尝试创建（已存在则忽略），再统一编辑说明 + 上传
+          gh release create "$TAG" --title "低音谱号训练器 $TAG" --notes "$NOTES" 2>/tmp/gh-create.err
+          [ $? -eq 0 ] || echo "[gh create 跳过] $(head -3 /tmp/gh-create.err)"
+          gh release edit "$TAG" --notes "$NOTES" 2>/tmp/gh-edit.err
+          [ $? -eq 0 ] || echo "[gh edit] $(head -3 /tmp/gh-edit.err)"
+          if [ -n "$FILES" ]; then
+            gh release upload "$TAG" $FILES --clobber 2>/tmp/gh-upload.err
+            [ $? -eq 0 ] || echo "[gh upload] $(head -3 /tmp/gh-upload.err)"
           fi
+          set -e
           gh release view "$TAG" --json name,url,assets --jq '"Release: \(.name)\nURL: \(.url)\n资产: \([.assets[].name] | join(", "))"'
