@@ -103,11 +103,11 @@ jobs:
           fi
           NOTES="## 📦 $TAG 更新内容
 
-$LOG
+          $LOG
 
-> 自动构建的三平台安装包（$(date -u +%Y-%m-%d)）
-> macOS（Universal dmg）· Windows（NSIS / MSI）· Linux（deb / AppImage）
-"
+          > 自动构建的三平台安装包（$(date -u +%Y-%m-%d)）
+          > macOS（Universal dmg）· Windows（NSIS / MSI）· Linux（deb / AppImage）
+          "
 
           echo "==> 标签: $TAG"
           echo "==> 上传文件:"
