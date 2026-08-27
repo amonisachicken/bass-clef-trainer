@@ -1,6 +1,6 @@
 {
   "name": "bass-clef-trainer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "低音谱号与钢琴键位记忆训练器（Tauri 2 + Rust + 原生 JS）",

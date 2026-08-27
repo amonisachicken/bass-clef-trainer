@@ -6,8 +6,8 @@ import { nameOf, isNatural } from './notes.js';
 const KEY = 'bass-clef-profile-v1';
 
 const DEFAULT_SETTINGS = {
-  minMidi: 36,
-  maxMidi: 60,
+  minMidi: 41,
+  maxMidi: 59,
   rangePreset: 'basic',
   allowAccidentals: false,
   showKeyLabels: true,

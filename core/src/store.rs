@@ -34,8 +34,8 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            min_midi: 36, // C2
-            max_midi: 60, // C4
+            min_midi: 41, // F2
+            max_midi: 59, // B3
             range_preset: "basic".into(),
             allow_accidentals: false,
             show_key_labels: true,
@@ -225,7 +225,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("bass-clef-missing-{}", std::process::id()));
         let store = Store::new(dir.join("nope.json"));
         let p = store.load();
-        assert_eq!(p.settings.min_midi, 36);
+        assert_eq!(p.settings.min_midi, 41);
+        assert_eq!(p.settings.max_midi, 59);
         assert_eq!(p.stats.total_attempts, 0);
         let _ = fs::remove_dir_all(&dir);
     }

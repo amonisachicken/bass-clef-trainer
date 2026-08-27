@@ -56,7 +56,7 @@ test('加线数量', () => {
 test('降级模式答题流程', async () => {
   const { invoke } = await import('../src/js/demo.js');
   const q = await invoke('generate_question', { mode: 'staffToPiano' });
-  assert.ok(q.midi >= 36 && q.midi <= 60);
+  assert.ok(q.midi >= 41 && q.midi <= 59, `默认音域应为 F2–B3，得到 ${q.midi}`);
   assert.ok(q.name.length >= 2);
 
   const r1 = await invoke('submit_answer', { input: { midi: q.midi } });

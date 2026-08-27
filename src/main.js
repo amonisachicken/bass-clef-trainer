@@ -9,7 +9,7 @@ import { nameOf } from './js/notes.js';
 const $ = (sel) => document.querySelector(sel);
 
 const PRESETS = {
-  basic: { min: 36, max: 60 },    // C2 – C4
+  basic: { min: 41, max: 59 },    // F2 – B3（谱表内常用音域）
   advanced: { min: 36, max: 64 }, // C2 – E4
 };
 
@@ -45,6 +45,13 @@ async function init() {
   state.settings = profile.settings;
   state.stats = profile.stats;
   state.mode = profile.settings.mode || 'staffToPiano';
+
+  // 预设音域以 PRESETS 为准：老版本存档里的旧默认值（C2–C4）在此自动迁移到 F2–B3
+  const preset = PRESETS[state.settings.rangePreset];
+  if (preset) {
+    state.settings.minMidi = preset.min;
+    state.settings.maxMidi = preset.max;
+  }
 
   const badge = $('#envBadge');
   badge.hidden = false;
