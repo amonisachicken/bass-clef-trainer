@@ -98,15 +98,22 @@ cargo tauri build
 **方式 B · 在 Linux / macOS 上交叉编译**（无需 Windows 机器）：
 
 ```bash
-# 1. 安装 Windows 目标与链接器
+# 1. 安装 Windows 目标与工具链
 rustup target add x86_64-pc-windows-msvc
-# 安装 cargo-xwin（交叉链接器，从微软自动下载 MSVC CRT 与 Windows SDK）
-#   官网 https://github.com/rust-cross/cargo-xwin 下载预编译包，或: cargo install cargo-xwin
+#    cargo-xwin：交叉链接器（从微软自动下载 MSVC CRT 与 Windows SDK）
+#      官网 https://github.com/rust-cross/cargo-xwin 下载预编译包，或: cargo install cargo-xwin
+#    LLVM 工具（llvm-rc / llvm-lib / clang-cl / lld-link）：
+#      Ubuntu/Debian: sudo apt install llvm-19 clang-19 lld-19
+#    NSIS（Linux 版 makensis，用于打安装包）：
+#      sudo apt install nsis
 
 # 2. 交叉编译并打 NSIS 安装包（-setup.exe）
+export PATH="/usr/lib/llvm-19/bin:$PATH"
 npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis
 # 产物：src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
 ```
+
+> 本仓库已在 Linux 上实测通过该流程（Tauri 2.11 + cargo-xwin 0.23 + LLVM 19）。
 
 ### macOS（仅能在 macOS 上打包，需要 Xcode）
 
@@ -154,9 +161,9 @@ npm run check:js                             # 前端语法检查
 
 用户设置与学习统计保存在应用数据目录的 `profile.json`：
 
-- Linux：`~/.local/share/com.basscleftrainer.app/`
-- macOS：`~/Library/Application Support/com.basscleftrainer.app/`
-- Windows：`%APPDATA%\com.basscleftrainer.app\`
+- Linux：`~/.local/share/com.basscleftrainer.desktop/`
+- macOS：`~/Library/Application Support/com.basscleftrainer.desktop/`
+- Windows：`%APPDATA%\com.basscleftrainer.desktop\`
 
 ## 🎓 乐理说明（低音谱号）
 

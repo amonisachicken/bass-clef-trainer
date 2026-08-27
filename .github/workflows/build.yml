@@ -60,7 +60,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: app-v__VERSION__
+          tagName: v__VERSION__
           releaseName: '低音谱号训练器 v__VERSION__'
           releaseBody: '自动构建的三平台安装包。'
           releaseDraft: true

@@ -22,9 +22,9 @@ pub fn run() {
                 .app_data_dir()
                 .expect("无法确定应用数据目录");
             // 档案路径示例：
-            //   Linux:   ~/.local/share/com.basscleftrainer.app/profile.json
-            //   macOS:   ~/Library/Application Support/com.basscleftrainer.app/profile.json
-            //   Windows: %APPDATA%\com.basscleftrainer.app\profile.json
+            //   Linux:   ~/.local/share/com.basscleftrainer.desktop/profile.json
+            //   macOS:   ~/Library/Application Support/com.basscleftrainer.desktop/profile.json
+            //   Windows: %APPDATA%\com.basscleftrainer.desktop\profile.json
             let store = Store::new(data_dir.join("profile.json"));
             let profile = store.load();
             app.manage(AppState {
