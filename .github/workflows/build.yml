@@ -80,6 +80,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        # 全量克隆：变更日志需要完整历史与标签（git describe / git log）
+        with:
+          fetch-depth: 0
 
       - name: 下载全部构建产物
         uses: actions/download-artifact@v4
