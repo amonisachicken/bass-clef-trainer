@@ -129,7 +129,8 @@ npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles ns
 
 项目已内置 `.github/workflows/build.yml`：推送形如 `v0.1.0` 的 Git 标签（或手动触发），
 自动在 macOS / Windows / Linux 三台机器上打包，并把 `.dmg`、`.exe/.msi`、`.deb/.AppImage`
-上传为 GitHub Release 附件。示例：
+上传为 GitHub Release 附件。**每次发布会自动把"自上一个标签以来的提交"写入 Release 说明**，
+方便查看本次更新内容。示例：
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0

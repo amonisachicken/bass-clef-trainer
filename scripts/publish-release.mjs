@@ -28,6 +28,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 
 const token = process.env.GITHUB_TOKEN;
 const args = process.argv.slice(2);
@@ -54,10 +55,30 @@ try {
 
 const tag = get('tag') || `v${version}`;
 const name = get('name') || `低音谱号训练器 ${tag}`;
-const body = get('body') || '';
 const assets = expandAssets(get('assets') || '');
 const draft = has('draft');
 const dryRun = has('dry-run');
+
+/** 自动生成变更日志：自上一个标签以来的提交（未提供 --body 时使用）。 */
+function generateChangelog() {
+  try {
+    const prev = execSync('git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    const range = prev ? `${prev}..HEAD` : '-15 HEAD';
+    const log = execSync(`git log --oneline --no-merges ${range}`, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    const items = log ? log.split('\n').map((l) => `- ${l}`).join('\n') : '- （无提交记录）';
+    return `## 📦 ${tag} 更新内容\n\n${items}\n`;
+  } catch {
+    return `## 📦 ${tag} 更新内容\n`;
+  }
+}
+
+const body = get('body') || generateChangelog();
 
 const API = 'https://api.github.com';
 const UPLOAD = 'https://uploads.github.com';
@@ -115,6 +136,8 @@ async function main() {
   for (const f of assets) console.log(`    - ${f}`);
 
   if (dryRun) {
+    console.log(`\n==> Release 说明（${body.length} 字符）:`);
+    console.log(body.slice(0, 400));
     console.log('\n[dry-run] 以上为将要执行的操作，未发起任何网络请求。');
     return;
   }
