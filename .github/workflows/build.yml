@@ -1,0 +1,68 @@
+# 三平台自动打包（macOS / Windows / Linux）
+#
+# 触发方式：
+#   1. 推送形如 v0.1.0 的 Git 标签  → 自动打包并创建 GitHub Release（草稿）
+#   2. 手动：Actions 页面点击 "Run workflow"
+#
+# 产物（Release 附件）：
+#   - macOS   : BassClefTrainer_*.dmg（Universal，Intel + Apple Silicon）
+#   - Windows : *-setup.exe（NSIS 安装包）、*.msi
+#   - Linux   : *.deb、*.AppImage
+
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+          - platform: windows-latest
+            args: --bundles msi,nsis
+          - platform: ubuntu-22.04
+            args: --bundles deb,appimage
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Linux 系统依赖
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安装依赖
+        run: npm install --include=dev
+
+      - name: 打包并发布
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: app-v__VERSION__
+          releaseName: '低音谱号训练器 v__VERSION__'
+          releaseBody: '自动构建的三平台安装包。'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

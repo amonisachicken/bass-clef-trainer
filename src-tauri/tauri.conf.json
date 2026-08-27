@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "BassClefTrainer",
+  "version": "0.1.0",
+  "identifier": "com.basscleftrainer.app",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "低音谱号训练器",
+        "width": 1180,
+        "height": 840,
+        "minWidth": 1000,
+        "minHeight": 720,
+        "center": true,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Education",
+    "shortDescription": "低音谱号与钢琴键位记忆训练",
+    "longDescription": "通过“看谱弹键、看键认谱、音名问答”三种模式，帮助快速记忆低音谱号五线四间与钢琴琴键的对应关系。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

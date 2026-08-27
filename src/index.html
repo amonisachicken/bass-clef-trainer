@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>低音谱号训练器</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon">🎼</span>
+        <h1>低音谱号训练器</h1>
+        <span class="env-badge" id="envBadge" hidden></span>
+      </div>
+      <nav class="modes" id="modeTabs">
+        <button class="mode-btn active" data-mode="staffToPiano" title="谱表显示音符，点击钢琴上对应的琴键">看谱弹键</button>
+        <button class="mode-btn" data-mode="pianoToStaff" title="钢琴键高亮，点击谱表上对应的音位">看键认谱</button>
+        <button class="mode-btn" data-mode="name" title="谱表显示音符，从选项中选出它的音名">音名问答</button>
+      </nav>
+      <div class="score">
+        <span class="pill">正确率 <b id="acc">—</b></span>
+        <span class="pill">连对 <b id="streak">0</b></span>
+        <span class="pill">已答 <b id="attempts">0</b></span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="stage">
+        <div class="staff-wrap">
+          <canvas id="staffCanvas"></canvas>
+          <div class="hint" id="staffHint"></div>
+        </div>
+        <div class="name-options" id="nameOptions" hidden></div>
+        <div class="feedback" id="feedback" hidden></div>
+        <div class="piano-wrap">
+          <canvas id="pianoCanvas"></canvas>
+        </div>
+        <div class="hint" id="pianoHint"></div>
+        <button class="next-btn" id="nextBtn" hidden>下一题（空格 / Enter）</button>
+      </section>
+
+      <aside class="panel">
+        <section class="card">
+          <h2>⚙️ 设置</h2>
+          <div class="field">
+            <label for="rangePreset">练习音域</label>
+            <select id="rangePreset">
+              <option value="basic">基础（C2 – C4）</option>
+              <option value="advanced">进阶（C2 – E4）</option>
+              <option value="custom">自定义…</option>
+            </select>
+          </div>
+          <div class="field" id="customRange" hidden>
+            <div>
+              <label for="minNote">最低音</label>
+              <select id="minNote"></select>
+            </div>
+            <div>
+              <label for="maxNote">最高音</label>
+              <select id="maxNote"></select>
+            </div>
+          </div>
+          <label class="switch"><input type="checkbox" id="optAccidentals" /><span>包含升降号（黑键）</span></label>
+          <label class="switch"><input type="checkbox" id="optLabels" /><span>琴键上显示音名</span></label>
+          <label class="switch"><input type="checkbox" id="optCheat" /><span>显示对照表</span></label>
+          <label class="switch"><input type="checkbox" id="optSound" /><span>提示音</span></label>
+          <label class="switch"><input type="checkbox" id="optAutoNext" /><span>答对自动进入下一题</span></label>
+        </section>
+
+        <section class="card" id="cheatCard" hidden>
+          <h2>📖 低音谱对照表</h2>
+          <canvas id="cheatCanvas"></canvas>
+          <p class="small">
+            口诀 · 五线从下往上 <b>G B D F A</b>，四间 <b>A C E G</b><br />
+            下加一线 E2，上加一线 C4（中央 C）
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>📊 统计</h2>
+          <div class="stat-grid">
+            <div class="stat"><span>今日正确率</span><b id="statToday">—</b></div>
+            <div class="stat"><span>累计正确率</span><b id="statTotal">—</b></div>
+            <div class="stat"><span>最佳连对</span><b id="statBest">0</b></div>
+            <div class="stat"><span>累计作答</span><b id="statAttempts">0</b></div>
+          </div>
+          <button class="ghost-btn" id="resetStats">重置统计</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

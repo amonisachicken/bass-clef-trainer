@@ -1,0 +1,18 @@
+{
+  "name": "bass-clef-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "低音谱号与钢琴键位记忆训练器（Tauri 2 + Rust + 原生 JS）",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "node scripts/make-icon.mjs",
+    "test:js": "node --test test/*.test.mjs",
+    "check:js": "node --check src/main.js && node --check src/js/api.js && node --check src/js/audio.js && node --check src/js/demo.js && node --check src/js/notes.js && node --check src/js/piano.js && node --check src/js/staff.js",
+    "test:core": "cargo test --manifest-path core/Cargo.toml"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

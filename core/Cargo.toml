@@ -1,0 +1,13 @@
+[package]
+name = "bass-clef-core"
+version = "0.1.0"
+edition = "2021"
+description = "低音谱号训练器核心库：音符命名、谱表位置换算、出题与答题判定、统计持久化"
+
+[lib]
+name = "bass_clef_core"
+
+[dependencies]
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
