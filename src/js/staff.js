@@ -140,6 +140,7 @@ export class StaffRenderer {
     this.minMidi = minMidi;
     this.maxMidi = maxMidi;
     this.allowAccidentals = allowAccidentals;
+    this.layout(); // 音域变化会改变画布高度
     this.draw();
   }
 
@@ -153,15 +154,22 @@ export class StaffRenderer {
     const dpr = window.devicePixelRatio || 1;
     const w = Math.max(360, this.canvas.parentElement.clientWidth || 640);
     this.w = w;
-    this.h = 250;
+    this.gap = Math.min(17, Math.max(11, w / 36));
+    // 动态高度：默认音域 F2(音位 -1) ~ B3(音位 9) 时高度 250（与以往一致）。
+    // 最高音每高出 B3 一个音符，谱表上方扩展一个音符高（gap）；
+    // 最低音每低于 F2 一个音符，谱表下方同样扩展。
+    const posMin = staffPosition(this.minMidi);
+    const posMax = staffPosition(this.maxMidi);
+    this.aboveExtra = Math.max(0, posMax - 9);
+    this.belowExtra = Math.max(0, -1 - posMin);
+    this.h = 250 + (this.aboveExtra + this.belowExtra) * this.gap;
     this.canvas.width = w * dpr;
     this.canvas.height = this.h * dpr;
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = this.h + 'px';
     this.dpr = dpr;
-    this.gap = Math.min(17, Math.max(11, w / 36));
-    this.line1Y = this.h - 62;             // 最下线（第一线）
-    this.line5Y = this.line1Y - 4 * this.gap;
+    this.line1Y = this.h - 62 - this.belowExtra * this.gap; // 最下线（第一线）
+    this.line5Y = this.line1Y - 8 * this.gap;               // 最上线（第五线）
     this.noteX = this.w * 0.42;
   }
 

@@ -89,6 +89,44 @@ test('前端主逻辑：init 完整执行，设置加载/联动/答错下一题�
   assert.deepEqual(errors, [], '不应有任何运行时错误');
 });
 
+test('谱表高度随音域动态扩展（默认 F2–B3 高度 250，每超出一个音符扩展一个 gap）', async () => {
+  const { StaffRenderer } = await import('../src/js/staff.js');
+  // 构造一个带父容器的 canvas
+  const wrap = window.document.createElement('div');
+  wrap.style.width = '800px';
+  wrap.style.height = '300px';
+  window.document.body.appendChild(wrap);
+  const canvas = window.document.createElement('canvas');
+  wrap.appendChild(canvas);
+
+  const r = new StaffRenderer(canvas, {});
+  // 默认 F2(41,pos-1)–B3(59,pos9)：不扩展
+  r.setRange(41, 59, false);
+  assert.equal(r.h, 250, '默认音域高度应为 250');
+  assert.equal(r.h - r.line1Y, 62, '默认音域底部边距应不变');
+
+  // 最高音 E4(64,pos12)：高于 B3 3 个音符 → 上方扩展 3*gap（谱表下移、底部边距不变）
+  r.setRange(41, 64, false);
+  assert.equal(r.h, 250 + 3 * r.gap, '最高音升高 3 音符应扩展 3*gap');
+  assert.equal(r.h - r.line1Y, 62, '只升高最高音时底部边距应不变');
+  assert.equal(r.line5Y, (250 - 62 - 8 * r.gap) + 3 * r.gap, '上方空间应扩展 3*gap');
+
+  // 最低音 C2(36,pos-4)：低于 F2 3 个音符 → 下方扩展 3*gap（line1Y 上移）
+  r.setRange(36, 59, false);
+  assert.equal(r.h, 250 + 3 * r.gap, '最低音降低 3 音符应扩展 3*gap');
+  assert.equal(r.h - r.line1Y, 62 + 3 * r.gap, '最低音降低时底部边距应扩展 3*gap');
+  assert.equal(r.line5Y, 250 - 62 - 8 * r.gap, '只降低最低音时上方空间应不变');
+
+  // 双向同时扩展
+  r.setRange(36, 64, false);
+  assert.equal(r.h, 250 + 6 * r.gap, '双向各扩展 3 音符应共扩展 6*gap');
+  assert.equal(r.aboveExtra, 3, 'aboveExtra 应为 3');
+  assert.equal(r.belowExtra, 3, 'belowExtra 应为 3');
+
+  // 谱表内部几何：一线到五线 = 8*gap（5 条线 × 4 个间隔 × 2gap）
+  assert.equal(r.line1Y - r.line5Y, 8 * r.gap, '一线到五线间距应为 8*gap');
+});
+
 test('看键认谱模式：切换后点击谱表应正常作答', async () => {
   // 模式按钮应只剩两个（音名问答已移除）
   const modeBtns = [...window.document.querySelectorAll('.mode-btn')];
